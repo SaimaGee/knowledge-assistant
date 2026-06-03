@@ -1,0 +1,11 @@
+app:
+  llm-provider: ollama
+
+server:
+  tomcat:
+    connection-timeout: 120s
+
+ollama:
+  base-url: http://localhost:11434
+  timeout: 120000
+  model: llama3.2
