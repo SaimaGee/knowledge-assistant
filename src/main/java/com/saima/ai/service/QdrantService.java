@@ -44,7 +44,7 @@ public class QdrantService {
     }
 
     public void saveChunk(
-            int id,
+            Object id,
             String text,
             List<Double> embedding) {
         Map<String, Object> payload =
