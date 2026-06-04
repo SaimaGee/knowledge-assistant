@@ -9,11 +9,22 @@ import java.nio.file.StandardCopyOption;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class PdfService {
+
+    private final Path uploadPath;
+    private final Path extractedPath;
+
+    public PdfService(
+            @Value("${pdf.upload-dir:uploads}") String uploadDir,
+            @Value("${pdf.extracted-dir:uploads/extracted}") String extractedDir) {
+        this.uploadPath = Paths.get(uploadDir);
+        this.extractedPath = Paths.get(extractedDir);
+    }
 
     public String extractText(MultipartFile file)
         throws Exception {
@@ -43,8 +54,6 @@ public class PdfService {
             throws IOException 
             {
 
-        Path uploadPath = Paths.get("uploads");
-
         Files.createDirectories(uploadPath);
 
         Files.copy(
@@ -59,13 +68,10 @@ public class PdfService {
         String text)
         throws IOException {
 
-        Path textPath =
-                Paths.get("uploads/extracted");
-
-        Files.createDirectories(textPath);
+        Files.createDirectories(extractedPath);
 
         Files.writeString(
-                textPath.resolve(
+                extractedPath.resolve(
                     fileName + ".txt"
                 ),
                 text

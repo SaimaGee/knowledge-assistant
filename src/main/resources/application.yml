@@ -9,3 +9,26 @@ ollama:
   base-url: http://localhost:11434
   timeout: 120000
   model: llama3.2
+
+bedrock:
+  region: ap-southeast-2
+  model-id: anthropic.claude-sonnet-4-64k-20240909
+
+pdf:
+  upload-dir: uploads
+  extracted-dir: uploads/extracted
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+
+volumes:
+  qdrant_storage:
+
+      

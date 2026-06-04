@@ -1,5 +1,6 @@
 package com.saima.ai.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -15,15 +16,15 @@ import software.amazon.awssdk.regions.Region;
 public class BedrockLlmService implements LlmService {
     private final ChatModel model;
 
-    public BedrockLlmService() {
+    public BedrockLlmService(
+            @Value("${bedrock.region:ap-southeast-2}") String bedrockRegion,
+            @Value("${bedrock.model-id:anthropic.claude-sonnet-4-64k-20240909}") String bedrockModelId) {
         this.model =
             BedrockChatModel.builder()
-                .region(Region.AP_SOUTHEAST_2)
-                .modelId(
-                    "anthropic.claude-sonnet-4-64k-20240909"
-                )
+                .region(Region.of(bedrockRegion))
+                .modelId(bedrockModelId)
                 .build();
-            }            
+    }
 
     public String ask(String prompt) {
         return model.chat(prompt);
