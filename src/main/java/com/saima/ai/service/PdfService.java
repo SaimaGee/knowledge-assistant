@@ -11,14 +11,15 @@ import java.util.List;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class PdfService {
 
     private final Path uploadPath;
@@ -26,6 +27,7 @@ public class PdfService {
     private final EmbeddingService embeddingService;
     private final QdrantService qdrantService;
 
+    @Autowired
     public PdfService(
             @Value("${pdf.upload-dir:uploads}") String uploadDir,
             @Value("${pdf.extracted-dir:uploads/extracted}") String extractedDir,
@@ -63,16 +65,23 @@ public class PdfService {
 
     public String extractTextAndIndex(MultipartFile file)
             throws Exception {
+        String originalFilename = file.getOriginalFilename();
+        log.info("Starting PDF upload/index for file={}", originalFilename);
+
         String extractedText = extractText(file);
-        indexText(file.getOriginalFilename(), extractedText);
+        log.info("Extracted text length={} for file={}", extractedText.length(), originalFilename);
+
+        indexText(originalFilename, extractedText);
         return extractedText;
     }
 
     private void indexText(String fileName, String text) {
         List<String> chunks = chunkText(text, 500);
+        log.info("Indexing file={} into {} chunk(s)", fileName, chunks.size());
 
         for (int i = 0; i < chunks.size(); i++) {
             String chunk = chunks.get(i);
+            log.debug("Indexing chunk {} for file={}, chunk length={}", i, fileName, chunk.length());
             List<Double> embedding = embeddingService.generateEmbedding(chunk);
             String chunkId = fileName + "-" + i;
             qdrantService.saveChunk(chunkId, chunk, embedding);

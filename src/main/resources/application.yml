@@ -15,7 +15,7 @@ bedrock:
   model-id: anthropic.claude-sonnet-4-64k-20240909
 
 pdf:
-  upload-dir: uploads
+  upload-dir: uploads/pdfs
   extracted-dir: uploads/extracted
 
       
