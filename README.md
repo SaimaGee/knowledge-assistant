@@ -6,6 +6,15 @@ Built using Java Spring Boot, React, Ollama/Llama, Qdrant Vector Database and Do
 
 ---
 
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Setup Guide](docs/setup.md)
+- [API Reference](docs/api.md)
+- [RAG Flow](docs/rag-flow.md)
+- [Deployment](docs/deployment.md)
+- [Roadmap](docs/roadmap.md)
+
 ## Features
 
 ### AI Chat
