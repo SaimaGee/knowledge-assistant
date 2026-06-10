@@ -1,74 +1,86 @@
 package com.saima.ai.controller;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Instant;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import lombok.RequiredArgsConstructor;
-
 @RestController
 @RequestMapping("/api")
-@RequiredArgsConstructor
 public class ApiController {
 
-    @Value("${ollama.base-url:http://localhost:11434}")
-    private String ollamaBaseUrl;
+    private final RestClient ollamaClient;
 
-    private RestClient getOllamaClient() {
-        return RestClient.builder()
+    public ApiController(@Value("${ollama.base-url:http://localhost:11434}") String ollamaBaseUrl) {
+        this.ollamaClient = RestClient.builder()
                 .baseUrl(ollamaBaseUrl)
                 .build();
     }
 
-    @PostMapping("/health")
-    public ResponseEntity<?> health() {
+    @GetMapping("/health")
+    public ResponseEntity<HealthResponse> health() {
         try {
-            getOllamaClient().get()
+            ollamaClient.get()
                     .uri("/api/tags")
                     .retrieve()
-                    .body(Map.class);
+                    .toBodilessEntity();
 
-            Map<String, Object> healthResponse = new HashMap<>();
-            healthResponse.put("status", "UP");
-            healthResponse.put("llm_service", "healthy");
-            healthResponse.put("timestamp", System.currentTimeMillis());
-
-            return ResponseEntity.ok(healthResponse);
+            return ResponseEntity.ok(HealthResponse.healthy());
         } catch (RestClientException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "DOWN");
-            errorResponse.put("llm_service", "unhealthy");
-            errorResponse.put("error", e.getMessage());
-            errorResponse.put("timestamp", System.currentTimeMillis());
-
-            return ResponseEntity.status(503).body(errorResponse);
+            return ResponseEntity.status(503)
+                    .body(HealthResponse.unhealthy(e.getMessage()));
         }
     }
 
     @GetMapping("/models")
     public ResponseEntity<?> getModels() {
         try {
-            Map<String, Object> response = getOllamaClient().get()
+            var response = ollamaClient.get()
                     .uri("/api/tags")
                     .retrieve()
-                    .body(Map.class);
+                    .body(OllamaTagsResponse.class);
 
             return ResponseEntity.ok(response);
         } catch (RestClientException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to fetch models");
-            errorResponse.put("message", e.getMessage());
-            errorResponse.put("timestamp", System.currentTimeMillis());
-
-            return ResponseEntity.status(503).body(errorResponse);
+            return ResponseEntity.status(503)
+                    .body(new ErrorResponse("Failed to fetch models", e.getMessage()));
         }
+    }
+
+    // --- DTOs as records for immutability and less boilerplate ---
+
+    public record HealthResponse(
+            String status,
+            String llmService,
+            String error,
+            Instant timestamp
+    ) {
+        public static HealthResponse healthy() {
+            return new HealthResponse("UP", "healthy", null, Instant.now());
+        }
+
+        public static HealthResponse unhealthy(String error) {
+            return new HealthResponse("DOWN", "unhealthy", error, Instant.now());
+        }
+    }
+
+    public record ErrorResponse(
+            String error,
+            String message,
+            Instant timestamp
+    ) {
+        public ErrorResponse(String error, String message) {
+            this(error, message, Instant.now());
+        }
+    }
+
+    // Placeholder — expand to match Ollama's actual response structure
+    public record OllamaTagsResponse(java.util.List<Model> models) {
+        public record Model(String name, String model, long size) {}
     }
 }
