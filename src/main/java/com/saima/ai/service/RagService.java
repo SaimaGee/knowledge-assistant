@@ -59,9 +59,6 @@ public class RagService {
                                 embeddingService.generateEmbedding(
                                                 question);
 
-                List<String> relevantChunks =
-                                qdrantService.search(questionVector);
-
-                return relevantChunks;
+                return qdrantService.search(questionVector);
         }
 }
