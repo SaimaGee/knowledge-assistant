@@ -2,8 +2,9 @@ package com.saima.ai.model.qdrant;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record QdrantSearchRequest(
         List<Double> vector,
         Integer limit,
-        Boolean with_payload
-) {}
+        @JsonProperty("with_payload") boolean withPayload) {}

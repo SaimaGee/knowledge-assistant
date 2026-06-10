@@ -1,5 +1,7 @@
 package com.saima.ai.service;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import com.saima.ai.exception.LlmServiceException;
+import com.saima.ai.model.request.OllamaRequest;
 import com.saima.ai.model.response.OllamaResponse;
 
 @Primary

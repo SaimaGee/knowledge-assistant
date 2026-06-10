@@ -18,4 +18,10 @@ pdf:
   upload-dir: uploads/pdfs
   extracted-dir: uploads/extracted
 
+qdrant:
+  base-url: http://localhost:6333
+  collection: knowledge-base
+  vector-size: 768
+  search-limit: 5  
+
       
