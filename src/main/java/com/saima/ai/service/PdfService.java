@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.pdfbox.Loader;
@@ -26,17 +25,21 @@ public class PdfService {
     private final Path extractedPath;
     private final EmbeddingService embeddingService;
     private final QdrantService qdrantService;
+    private final ChunkingService chunkingService;
 
     @Autowired
     public PdfService(
-            @Value("${pdf.upload-dir:uploads}") String uploadDir,
-            @Value("${pdf.extracted-dir:uploads/extracted}") String extractedDir,
-            EmbeddingService embeddingService,
-            QdrantService qdrantService) {
-        this.uploadPath = Paths.get(uploadDir);
-        this.extractedPath = Paths.get(extractedDir);
-        this.embeddingService = embeddingService;
-        this.qdrantService = qdrantService;
+        @Value("${pdf.upload-dir:uploads}") String uploadDir,
+        @Value("${pdf.extracted-dir:uploads/extracted}") String extractedDir,
+        EmbeddingService embeddingService,
+        QdrantService qdrantService,
+        ChunkingService chunkingService) {
+
+            this.uploadPath = Paths.get(uploadDir);
+            this.extractedPath = Paths.get(extractedDir);
+            this.embeddingService = embeddingService;
+            this.qdrantService = qdrantService;
+            this.chunkingService = chunkingService;
     }
 
     public String extractText(MultipartFile file)
@@ -76,7 +79,7 @@ public class PdfService {
     }
 
     private void indexText(String fileName, String text) {
-        List<String> chunks = chunkText(text, 500);
+        List<String> chunks = chunkingService.chunkText(text, 500);
         log.info("Indexing file={} into {} chunk(s)", fileName, chunks.size());
 
         for (int i = 0; i < chunks.size(); i++) {
@@ -86,29 +89,6 @@ public class PdfService {
             String chunkId = fileName + "-" + i;
             qdrantService.saveChunk(chunkId, chunk, embedding);
         }
-    }
-
-    private List<String> chunkText(String text, int maxLength) {
-        List<String> chunks = new ArrayList<>();
-        int start = 0;
-        int length = text.length();
-
-        while (start < length) {
-            int end = Math.min(length, start + maxLength);
-            if (end < length) {
-                int lastSpace = text.lastIndexOf(' ', end);
-                if (lastSpace > start) {
-                    end = lastSpace;
-                }
-            }
-            String chunk = text.substring(start, end).trim();
-            if (!chunk.isEmpty()) {
-                chunks.add(chunk);
-            }
-            start = end;
-        }
-
-        return chunks;
     }
 
     private void saveFile(MultipartFile file)

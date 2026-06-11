@@ -1,25 +1,52 @@
 package com.saima.ai.service;
 
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
 
 @Service
 public class ChunkingService {
 
-    public List<String> chunkText(String text, int chunkSize) {
+    public List<String> chunkText(
+            String text,
+            int maxLength) {
 
         List<String> chunks = new ArrayList<>();
 
-        for (int i = 0; i < text.length(); i += chunkSize) {
+        int start = 0;
+        int length = text.length();
 
-            chunks.add(
+        while (start < length) {
+
+            int end =
+                    Math.min(
+                            length,
+                            start + maxLength);
+
+            if (end < length) {
+
+                int lastSpace =
+                        text.lastIndexOf(
+                                ' ',
+                                end);
+
+                if (lastSpace > start) {
+                    end = lastSpace;
+                }
+            }
+
+            String chunk =
                     text.substring(
-                            i,
-                            Math.min(i + chunkSize, text.length())
-                    )
-            );
+                            start,
+                            end)
+                            .trim();
+
+            if (!chunk.isEmpty()) {
+                chunks.add(chunk);
+            }
+
+            start = end;
         }
 
         return chunks;
