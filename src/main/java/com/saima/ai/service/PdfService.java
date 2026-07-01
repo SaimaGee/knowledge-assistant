@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -78,7 +79,14 @@ public class PdfService {
         return extractedText;
     }
 
-    private void indexText(String fileName, String text) {
+    public int extractTextAndIndex(UUID documentId, String fileName, MultipartFile file) throws Exception {
+        log.info("Starting PDF upload/index for file={} id={}", fileName, documentId);
+        String extractedText = extractText(file);
+        int chunkCount = indexText(fileName, extractedText);
+        return chunkCount;
+    }
+
+    private int indexText(String fileName, String text) {
         List<String> chunks = chunkingService.chunkText(text, 500);
         log.info("Indexing file={} into {} chunk(s)", fileName, chunks.size());
 
@@ -87,8 +95,10 @@ public class PdfService {
             log.debug("Indexing chunk {} for file={}, chunk length={}", i, fileName, chunk.length());
             List<Double> embedding = embeddingService.generateEmbedding(chunk);
             String chunkId = fileName + "-" + i;
-            qdrantService.saveChunk(chunkId, chunk, embedding);
+            qdrantService.saveChunk(chunkId, chunk, embedding, fileName, i);
         }
+
+        return chunks.size();
     }
 
     private void saveFile(MultipartFile file)

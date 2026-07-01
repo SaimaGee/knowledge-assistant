@@ -11,35 +11,28 @@ The application enables users to upload PDF documents and ask natural language q
 ### AI Chat
 
 * Conversational question answering
-* Context-aware responses
+* Context-aware responses with citations
 * Local LLM support using Ollama
-* Extensible architecture for Bedrock, Claude and OpenAI
+* Conversation history and sidebar navigation
 
 ### Document Processing
 
-* PDF upload
+* PDF upload and indexing
 * Text extraction using Apache PDFBox
-* Document storage
-* Metadata management
+* Document library with upload date and chunk metadata
+* Document deletion with vector cleanup support
 
 ### Retrieval Augmented Generation (RAG)
 
 * Text chunking
 * Embedding generation
-* Vector similarity search
-* Context retrieval
-* Source-aware responses
-
-### Vector Database
-
-* Qdrant integration
-* Semantic search
-* High-performance vector indexing
+* Vector similarity search with Qdrant
+* Context retrieval and source-aware responses
 
 ### Full Stack Architecture
 
-* React frontend
-* Spring Boot backend
+* React frontend with Vite
+* Spring Boot backend API
 * Ollama LLM runtime
 * Qdrant vector database
 
@@ -126,13 +119,12 @@ Generate Answer
 * React
 * Vite
 * JavaScript
-* Material UI (planned)
 
 ### Backend
 
 * Java 21
-* Spring Boot 3
-* Maven
+* Spring Boot 4.0.6
+* Maven Wrapper
 
 ### AI & RAG
 
@@ -254,41 +246,33 @@ npm run dev
 
 ## API Endpoints
 
-### Upload PDF
+### Documents
 
-```http
-POST /api/documents/upload
-```
+* `GET /api/documents` — list uploaded documents
+* `POST /api/documents/upload` — upload and index a PDF
+* `DELETE /api/documents/{id}` — remove a document and its indexed vectors
 
-Example:
+Example upload:
 
 ```bash
 curl \
--F "file=@sample.pdf" \
-http://localhost:8080/api/documents/upload
+  -F "file=@sample.pdf" \
+  http://localhost:8080/api/documents/upload
 ```
 
----
+### Conversations and Chat
 
-### Ask Question
+* `GET /api/conversations` — list conversations for the sidebar
+* `GET /api/conversations/{id}` — retrieve the full message history
+* `POST /api/chat` — send a chat message and optionally include `conversationId`
+* `DELETE /api/conversations/{id}` — delete a conversation
 
-```http
-POST /api/chat
-```
-
-Request:
+Example chat request:
 
 ```json
 {
-  "message": "What is AWS IAM?"
-}
-```
-
-Response:
-
-```json
-{
-  "answer": "AWS IAM is a service used to manage users, roles and permissions."
+  "message": "What is AWS IAM?",
+  "conversationId": "optional-existing-id"
 }
 ```
 

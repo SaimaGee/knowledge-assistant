@@ -1,6 +1,7 @@
 package com.saima.ai.service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -10,6 +11,7 @@ import org.springframework.web.client.RestClient;
 
 import com.saima.ai.config.QdrantProperties;
 import com.saima.ai.exception.QdrantException;
+import com.saima.ai.model.RetrievedChunk;
 import com.saima.ai.model.qdrant.PointPayload;
 import com.saima.ai.model.qdrant.QdrantPoint;
 import com.saima.ai.model.qdrant.QdrantSearchRequest;
@@ -63,13 +65,11 @@ public class QdrantService {
         }
     }
 
-    public void saveChunk(String sourceId, String text, List<Double> embedding) {
-        String pointId = UUID.randomUUID().toString();
-        log.debug("Saving chunk source_id={} pointId={} vectorLen={} preview={}",
-                sourceId, pointId, embedding.size(), preview(text));
+    public void saveChunk(String sourceId, String text, List<Double> embedding, String documentName, int chunkNumber) {        String pointId = UUID.randomUUID().toString();
+        log.debug("Saving chunk source_id={} pointId={} chunkNumber={} vectorLen={} preview={}",
+                sourceId, pointId, chunkNumber, embedding.size(), preview(text));
 
-        var point   = new QdrantPoint(pointId, embedding,
-                          new PointPayload(text, sourceId));
+        var point = new QdrantPoint(pointId, embedding, new PointPayload(text, sourceId, documentName, chunkNumber));
         var request = new UpsertPointsRequest(List.of(point));
 
         try {
@@ -78,14 +78,15 @@ public class QdrantService {
                     .body(request)
                     .retrieve()
                     .toBodilessEntity();
-            log.info("Saved chunk source_id={} as pointId={}", sourceId, pointId);
+            log.info("Saved chunk source_id={} documentName={} chunkNumber={} as pointId={}",
+                    sourceId, documentName, chunkNumber, pointId);
         } catch (QdrantException e) {
             log.error("Failed to save chunk source_id={}: {}", sourceId, e.getMessage());
-            throw e; // let caller decide — don't silently drop data
+            throw e;
         }
     }
 
-    public List<String> search(List<Double> vector) {
+    public List<RetrievedChunk> search(List<Double> vector) {
         log.info("Searching Qdrant vectorLen={}", vector.size());
 
         var request  = new QdrantSearchRequest(vector, props.searchLimit(), true);
@@ -106,8 +107,13 @@ public class QdrantService {
                 .filter(hit -> hit.payload() != null)
                 .peek(hit -> log.debug("Hit id={} score={} preview={}",
                         hit.id(), hit.score(), preview(hit.payload().text())))
-                .map(hit -> hit.payload().text())
-                .filter(t -> t != null && !t.isBlank())
+                .map(hit -> new RetrievedChunk(
+                        hit.payload().text(),
+                        UUID.fromString(hit.payload().sourceId()),
+                        Objects.requireNonNullElse(hit.payload().documentName(), "Unknown"),
+                        Objects.requireNonNullElse(hit.payload().chunkNumber(), 0),
+                        hit.score()
+                ))
                 .toList();
     }
 

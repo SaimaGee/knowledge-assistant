@@ -4,6 +4,10 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.saima.ai.model.RetrievedChunk;
+import com.saima.ai.model.response.ChatResponse;
+import com.saima.ai.model.response.SourceCitation;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,24 +20,20 @@ public class RagService {
     private final QdrantService qdrantService;
     private final LlmService llmService;
 
-    public String askQuestion(
-            String question) {
+    public ChatResponse askQuestion(String question) {
 
-        List<Double> questionVector =
-                embeddingService.generateEmbedding(
-                        question);
-
-        List<String> relevantChunks =
-                qdrantService.search(questionVector);
+        List<RetrievedChunk> relevantChunks = retrieveChunks(question);
 
         log.info("Retrieved {} relevant chunk(s) for question={}", relevantChunks.size(), question);
         relevantChunks.stream()
                 .limit(3)
-                .forEach(chunk -> log.debug("Retrieved chunk preview={}", chunk.length() > 120 ? chunk.substring(0, 120) + "..." : chunk));
+                .forEach(chunk -> log.debug("Retrieved chunk preview={}",
+                        chunk.text().length() > 120 ? chunk.text().substring(0, 120) + "..." : chunk.text()));
 
-        String context =
-                String.join("\n\n",
-                        relevantChunks);
+        String context = relevantChunks.stream()
+                .map(RetrievedChunk::text)
+                .reduce((a, b) -> a + "\n\n" + b)
+                .orElse("");
 
         String prompt =
                 """
@@ -46,19 +46,24 @@ public class RagService {
 
                 Question:
                 %s
-                """.formatted(
-                        context,
-                        question
-                );
+                """.formatted(context, question);
 
-        return llmService.ask(prompt);
+        String answer = llmService.ask(prompt);
+
+        List<SourceCitation> citations = relevantChunks.stream()
+                .map(chunk -> new SourceCitation(
+                        chunk.documentId(),
+                        chunk.documentName(),
+                        chunk.pageNumber(),
+                        chunk.text().length() > 200 ? chunk.text().substring(0, 200) + "..." : chunk.text(),
+                        chunk.score()))
+                .toList();
+
+        return new ChatResponse(answer, citations, null); // conversationId filled in by caller once persistence lands
     }
 
-        public List<String> retrieveChunks(String question) {
-                List<Double> questionVector =
-                                embeddingService.generateEmbedding(
-                                                question);
-
-                return qdrantService.search(questionVector);
-        }
+    public List<RetrievedChunk> retrieveChunks(String question) {
+        List<Double> questionVector = embeddingService.generateEmbedding(question);
+        return qdrantService.search(questionVector);
+    }
 }
