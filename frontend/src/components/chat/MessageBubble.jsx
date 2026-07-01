@@ -1,4 +1,6 @@
-function MessageBubble({ message }) {
+import CitationCard from './CitationCard';
+
+export default function MessageBubble({ message }) {
   return (
     <div className="message assistant">
       <p>{message.content}</p>

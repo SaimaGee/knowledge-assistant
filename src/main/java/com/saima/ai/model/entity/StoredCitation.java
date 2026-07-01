@@ -1,11 +1,11 @@
 package com.saima.ai.model.entity;
 
+import java.util.UUID;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
-
-import java.util.UUID;
 
 @Entity
 public class StoredCitation {
@@ -25,7 +25,7 @@ public class StoredCitation {
     @ManyToOne
     private ChatMessage chatMessage;
 
-    protected StoredCitation() {
+    public StoredCitation() {
     }
 
     public StoredCitation(UUID documentId, String documentName, int pageNumber, String snippet) {
@@ -43,16 +43,32 @@ public class StoredCitation {
         return documentId;
     }
 
+    public void setDocumentId(UUID documentId) {
+        this.documentId = documentId;
+    }
+
     public String getDocumentName() {
         return documentName;
+    }
+
+    public void setDocumentName(String documentName) {
+        this.documentName = documentName;
     }
 
     public int getPageNumber() {
         return pageNumber;
     }
 
+    public void setPageNumber(int pageNumber) {
+        this.pageNumber = pageNumber;
+    }
+
     public String getSnippet() {
         return snippet;
+    }
+
+    public void setSnippet(String snippet) {
+        this.snippet = snippet;
     }
 
     public ChatMessage getChatMessage() {

@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -25,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@ConfigurationProperties(prefix = "qdrant")
 public class QdrantService {
 
     private final RestClient        client;

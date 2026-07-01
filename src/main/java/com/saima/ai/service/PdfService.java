@@ -79,11 +79,18 @@ public class PdfService {
         return extractedText;
     }
 
-    public int extractTextAndIndex(UUID documentId, String fileName, MultipartFile file) throws Exception {
+    public DocumentIndexResult extractTextAndIndex(UUID documentId, String fileName, MultipartFile file) throws Exception {
         log.info("Starting PDF upload/index for file={} id={}", fileName, documentId);
         String extractedText = extractText(file);
+        int pageCount = getPageCount(file);
         int chunkCount = indexText(fileName, extractedText);
-        return chunkCount;
+        return new DocumentIndexResult(pageCount, chunkCount);
+    }
+
+    private int getPageCount(MultipartFile file) throws IOException {
+        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
+            return document.getNumberOfPages();
+        }
     }
 
     private int indexText(String fileName, String text) {
@@ -128,4 +135,6 @@ public class PdfService {
                 text
         );
     }
+
+    public record DocumentIndexResult(int pageCount, int chunkCount) {}
 }

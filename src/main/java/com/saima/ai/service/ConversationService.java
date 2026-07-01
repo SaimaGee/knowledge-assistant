@@ -137,10 +137,10 @@ public class ConversationService {
 
     private Conversation createConversation(String title) {
         Conversation conversation = new Conversation();
-        conversation.id = UUID.randomUUID();
-        conversation.title = title;
-        conversation.createdAt = Instant.now();
-        conversation.messages = new ArrayList<>();
+        conversation.setId(UUID.randomUUID());
+        conversation.setTitle(title);
+        conversation.setCreatedAt(Instant.now());
+        conversation.setMessages(new ArrayList<>());
         return conversation;
     }
 

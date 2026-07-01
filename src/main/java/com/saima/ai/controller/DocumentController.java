@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.saima.ai.exception.InvalidUploadException;
 import com.saima.ai.model.dto.DocumentDto;
 import com.saima.ai.service.ConversationService;
 import com.saima.ai.service.PdfService;
@@ -33,16 +34,23 @@ public class DocumentController {
         return conversationService.listDocuments();
     }
 
-@PostMapping("/upload")
-public String uploadPdf(@RequestParam("file") MultipartFile file) throws Exception {
-    UUID documentId = UUID.randomUUID();
-    String fileName = file.getOriginalFilename();
+    @PostMapping("/upload")
+    public String uploadPdf(@RequestParam("file") MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty()) {
+            throw new InvalidUploadException("Please choose a file to upload.");
+        }
 
-    int chunkCount = pdfService.extractTextAndIndex(documentId, fileName, file);
-    conversationService.registerDocument(documentId, fileName, chunkCount);
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || !fileName.toLowerCase().endsWith(".pdf")) {
+            throw new InvalidUploadException("Only PDF files are supported.");
+        }
 
-    return "Indexed " + fileName;
-}
+        UUID documentId = UUID.randomUUID();
+        var indexResult = pdfService.extractTextAndIndex(documentId, fileName, file);
+        conversationService.registerDocument(documentId, fileName, indexResult.pageCount(), indexResult.chunkCount());
+
+        return "Indexed " + fileName;
+    }
 
     @DeleteMapping("/{id}")
     public void deleteDocument(@PathVariable UUID id) {

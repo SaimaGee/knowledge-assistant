@@ -46,7 +46,8 @@ public class ChatController {
         conversationService.createOrGetConversation(
                 request.conversationId(),
                 request.message(),
-                response.answer());
+                response.answer(),
+                response.sources());
         return response;
     }
 
